@@ -11,6 +11,10 @@ class ScreenState extends State {
         this.event = new AppEvent;
     }
 
+    init(currentPath) {
+
+    }
+
     on(event, callback) {
         return this.event.on(event, callback);
     }

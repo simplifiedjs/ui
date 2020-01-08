@@ -6,6 +6,12 @@ export default class State {
         this.subscribers = subscribers || [];
     }
 
+    /**
+     * Returns the entire state object if name is omitted or the value of the given name.
+     *
+     * @param {string} name
+     * @returns {*}
+     */
     get(name) {
         if (!name) {
             // Return all state
@@ -15,6 +21,13 @@ export default class State {
         return this.state[name];
     }
 
+    /**
+     * Sets or update a state.
+     *
+     * @param {string|object} name
+     * @param {*} value
+     * @param {boolean} isSilent
+     */
     set(name, value, isSilent = false) {
         let oldState = _.extend({}, this.state);
 
@@ -32,6 +45,12 @@ export default class State {
         this.__callSubscribers(oldState);
     }
 
+    /**
+     * Removes a state.
+     *
+     * @param {string} name
+     * @param {boolean} isSilent
+     */
     unset(name, isSilent = false) {
         if (!this.state[name]) {
             return;
@@ -41,10 +60,20 @@ export default class State {
 
         this.state = _.omit(this.state, name);
 
+        if (!isSilent) {
+            return;
+        }
+
         // Call subscribers
         this.__callSubscribers(oldState);
     }
 
+    /**
+     * Change the state object into a new one.
+     *
+     * @param {object} state
+     * @param {boolean} isSilent
+     */
     reset(state, isSilent = false) {
         let oldState = _.extend({}, this.state);
 
@@ -57,9 +86,15 @@ export default class State {
         this.__callSubscribers(oldState);
     }
 
-    subscriber(subscriber) {
+    /**
+     * Adds a callable function which gets executed whenever a state is changed.
+     *
+     * @param {function} subscriber
+     * @returns {boolean}
+     */
+    subscribe(subscriber) {
         if ('function' !== typeof subscriber || !subscriber.name) {
-            // Don't accept unnamed subscriber
+            // Don't accept unnamed subscriber callback
             return false;
         }
 
@@ -75,6 +110,11 @@ export default class State {
         return true;
     }
 
+    /**
+     * Removes a callable function listener.
+     *
+     * @param {function} callback
+     */
     unsubscribe(callback) {
         let subscribers = this.subscribers,
             index = _.indexOf(subscribers, callback);
@@ -87,8 +127,16 @@ export default class State {
         this.subscribers = subscribers;
     }
 
+    /**
+     * Calls and execute all listeners.
+     *
+     * @param {object} oldState
+     * @private
+     */
     __callSubscribers(oldState) {
-        _.map( this.subscribers, cb => cb.call(null, this.state, oldState, this));
+        let state = _.extend({}, this.state);
+
+        _.map( this.subscribers, cb => cb.call(null, state, oldState, this));
     }
 
     getKeys() {
@@ -104,12 +152,12 @@ export default class State {
     }
 
     /**
-     * Get the next property
+     * Get the value of the next property of the given state name.
      *
      * @param {string} name
      */
     nextOf(name) {
-        name = new String(name);
+        name = name.toString();
 
         let keys = this.getKeys(),
             index = _.findIndex(keys, name);
@@ -122,12 +170,12 @@ export default class State {
     }
 
     /**
-     * Get the previous property.
+     * Get the value of the previous property of the given state name.
      *
      * @param {string} name
      */
     prevOf(name) {
-        name = new String(name);
+        name = name.toString();
 
         let keys = this.getKeys(),
             index = _.findIndex(keys, name);
@@ -140,13 +188,13 @@ export default class State {
     }
 
     /**
-     * Returns the an state object. Removing any other instance of state.
+     * Returns a state as a plain object.
      *
      * @returns {object}
      */
     toJSON() {
         const json = obj => {
-            obj = _.clone(obj);
+            obj = _.extend({}, obj);
 
             Object.keys(obj).map( key => {
                 let value = obj[key];
